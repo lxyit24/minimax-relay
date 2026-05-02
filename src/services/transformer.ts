@@ -175,17 +175,24 @@ export function transformImageRequest(
   const minimaxReq: MiniMaxImageRequest = {
     model: model,
     prompt: openaiReq.prompt,
-    aspect_ratio: mapSizeToAspectRatio(openaiReq.size),
-    response_format: openaiReq.response_format === 'url' ? 'url' : 'base64',
+    response_format: openaiReq.response_format === 'url' ? 'url' : 'b64_json',
     n: openaiReq.n || 1,
   };
 
+  // MiniMax accepts either:
+  // 1. size enum: '256x256' | '512x512' | '1024x1024' | '1792x1024' | '1024x1792'
+  // 2. width + height (pixels) + aspect_ratio
+  // We send aspect_ratio only to avoid conflicts
   if (openaiReq.size) {
-    const [width, height] = openaiReq.size.split('x').map(Number);
-    if (width && height) {
-      minimaxReq.width = width;
-      minimaxReq.height = height;
+    if (openaiReq.size.includes('x')) {
+      // Pixel dimension format (e.g., '1024x1024') - map to aspect ratio
+      minimaxReq.aspect_ratio = mapSizeToAspectRatio(openaiReq.size);
+    } else {
+      // Already an aspect ratio (e.g., '1:1') - use as-is
+      minimaxReq.aspect_ratio = openaiReq.size as '1:1' | '16:9' | '4:3' | '3:2' | '2:3' | '3:4' | '9:16' | '21:9';
     }
+  } else {
+    minimaxReq.aspect_ratio = '1:1';
   }
 
   return minimaxReq;
