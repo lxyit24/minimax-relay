@@ -371,6 +371,45 @@
       border-top: 1px solid var(--border);
       margin-top: 2rem;
     }
+  
+    /* Model Type Tabs */
+    .model-type-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    .tab-btn {
+      padding: 0.5rem 1rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .model-inputs {
+      padding: 1rem;
+      background: var(--bg-primary);
+      border-radius: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
   </style>
 </head>
 <body>
@@ -506,7 +545,17 @@
       <div class="card-body">
         <div class="api-tester">
           <form id="testForm" onsubmit="return false;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            
+            <!-- Model Type Tabs -->
+            <div class="model-type-tabs">
+              <button type="button" class="tab-btn active" data-type="text" onclick="switchModelType('text')">📝 文本</button>
+              <button type="button" class="tab-btn" data-type="speech" onclick="switchModelType('speech')">🎤 语音</button>
+              <button type="button" class="tab-btn" data-type="video" onclick="switchModelType('video')">🎬 视频</button>
+              <button type="button" class="tab-btn" data-type="image" onclick="switchModelType('image')">🖼️ 图片</button>
+              <button type="button" class="tab-btn" data-type="music" onclick="switchModelType('music')">🎵 音乐</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
               <div>
                 <label>模型</label>
                 <select id="testModel">
@@ -519,19 +568,185 @@
                 <input type="password" id="testApiKey" name="api_key" placeholder="输入 API Key" autocomplete="current-password">
               </div>
             </div>
-          <div style="margin-top: 1rem;">
-            <label>提示词 (Prompt)</label>
-            <textarea id="testPrompt" placeholder="输入你的问题...">你好，请用一句话介绍自己</textarea>
-          </div>
-          <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-            <button class="btn btn-primary" onclick="testChat()">
-              <span id="testBtn">🚀 发送测试</span>
-            </button>
-            <button class="btn btn-secondary" onclick="testHealth()">
-              ❤️ 健康检查
-            </button>
-          </div>
-          <div class="response-box" id="testResponse" style="display: none;"></div>
+
+            <!-- Text Model Inputs -->
+            <div id="textInputs" class="model-inputs">
+              <div style="margin-top: 1rem;">
+                <label>提示词 (Prompt)</label>
+                <textarea id="textPrompt" placeholder="输入你的问题...">你好，请用一句话介绍自己</textarea>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+                <div>
+                  <label>Max Tokens</label>
+                  <input type="number" id="textMaxTokens" value="256" min="1" max="8192">
+                </div>
+                <div>
+                  <label>Temperature</label>
+                  <input type="number" id="textTemperature" value="0.7" min="0" max="2" step="0.1">
+                </div>
+              </div>
+            </div>
+
+            <!-- Speech Model Inputs -->
+            <div id="speechInputs" class="model-inputs" style="display: none;">
+              <div style="margin-top: 1rem;">
+                <label>提示词 (Prompt) - 输入要转换为语音的文本</label>
+                <textarea id="speechPrompt" placeholder="输入要转换为语音的文本..."></textarea>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+                <div>
+                  <label>声音</label>
+                  <select id="speechVoice">
+                    <option value="female-tianmei">女声-甜美</option>
+                    <option value="female-yunxi">女声-知性</option>
+                    <option value="male-yunyang">男声-专业</option>
+                    <option value="male-john">男声-英文</option>
+                    <option value="female-aria">女声-英文</option>
+                  </select>
+                </div>
+                <div>
+                  <label>输出格式</label>
+                  <select id="speechFormat">
+                    <option value="mp3">MP3</option>
+                    <option value="wav">WAV</option>
+                    <option value="opus">OPUS</option>
+                  </select>
+                </div>
+                <div>
+                  <label>语速</label>
+                  <input type="number" id="speechSpeed" value="1.0" min="0.5" max="2.0" step="0.1">
+                </div>
+              </div>
+            </div>
+
+            <!-- Video Model Inputs -->
+            <div id="videoInputs" class="model-inputs" style="display: none;">
+              <div style="margin-top: 1rem;">
+                <label>提示词 (Prompt) - 描述你想要生成的视频内容</label>
+                <textarea id="videoPrompt" placeholder="描述视频内容，如：一只猫在草地上奔跑..."></textarea>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+                <div>
+                  <label>分辨率</label>
+                  <select id="videoResolution">
+                    <option value="720P">720P</option>
+                    <option value="1080P">1080P</option>
+                    <option value="768P">768P</option>
+                  </select>
+                </div>
+                <div>
+                  <label>时长</label>
+                  <select id="videoDuration">
+                    <option value="5">5秒</option>
+                    <option value="6">6秒</option>
+                    <option value="10">10秒</option>
+                  </select>
+                </div>
+                <div>
+                  <label>镜头模式</label>
+                  <select id="videoCamera">
+                    <option value="auto">自动</option>
+                    <option value="远景">远景</option>
+                    <option value="中景">中景</option>
+                    <option value="特写">特写</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Image Model Inputs -->
+            <div id="imageInputs" class="model-inputs" style="display: none;">
+              <div style="margin-top: 1rem;">
+                <label>提示词 (Prompt) - 描述你想要生成的图片</label>
+                <textarea id="imagePrompt" placeholder="描述图片内容，如：一只可爱的橘猫在阳光下打盹..."></textarea>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+                <div>
+                  <label>尺寸</label>
+                  <select id="imageSize">
+                    <option value="1:1">1:1 (正方形)</option>
+                    <option value="16:9">16:9 (宽屏)</option>
+                    <option value="4:3">4:3</option>
+                    <option value="3:2">3:2</option>
+                    <option value="9:16">9:16 (竖屏)</option>
+                    <option value="21:9">21:9 (超宽)</option>
+                  </select>
+                </div>
+                <div>
+                  <label>图片模型</label>
+                  <select id="imageModelType">
+                    <option value="image-01">image-01</option>
+                    <option value="image-01-live">image-01-live</option>
+                  </select>
+                </div>
+                <div>
+                  <label>图片风格</label>
+                  <select id="imageStyle">
+                    <option value="expression好评">Expression好评</option>
+                    <option value="摄影">摄影</option>
+                    <option value="3D卡通">3D卡通</option>
+                    <option value="动漫">动漫</option>
+                    <option value="油画">油画</option>
+                    <option value="素描">素描</option>
+                    <option value="水彩">水彩</option>
+                    <option value="扁平插画">扁平插画</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Music Model Inputs -->
+            <div id="musicInputs" class="model-inputs" style="display: none;">
+              <div style="margin-top: 1rem;">
+                <label>提示词 (Prompt) - 描述你想要生成的音乐</label>
+                <textarea id="musicPrompt" placeholder="描述音乐风格和内容，如：轻快的流行音乐，适合派对..."></textarea>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+                <div>
+                  <label>音乐风格</label>
+                  <select id="musicStyle">
+                    <option value="pop">流行</option>
+                    <option value="electronic">电子</option>
+                    <option value="rock">摇滚</option>
+                    <option value="classical">古典</option>
+                    <option value="jazz">爵士</option>
+                    <option value="ambient">氛围</option>
+                    <option value="folk">民谣</option>
+                    <option value="hiphop">嘻哈</option>
+                  </select>
+                </div>
+                <div>
+                  <label>时长 (秒)</label>
+                  <input type="number" id="musicDuration" value="30" min="10" max="180">
+                </div>
+              </div>
+            </div>
+
+            <!-- Media Preview Containers -->
+            <div id="audioPreview" class="audio-preview" style="display: none; margin-top: 1rem;">
+              <label>🔊 音频预览</label>
+              <audio id="audioPlayer" controls style="width: 100%; margin-top: 0.5rem;"></audio>
+            </div>
+
+            <div id="imagePreview" class="image-preview" style="display: none; margin-top: 1rem;">
+              <label>🖼️ 图片预览</label>
+              <img id="imagePlayer" style="max-width: 100%; max-height: 300px; border-radius: 0.5rem; margin-top: 0.5rem;">
+            </div>
+
+            <div id="videoPreview" class="video-preview" style="display: none; margin-top: 1rem;">
+              <label>🎬 视频预览</label>
+              <video id="videoPlayer" controls style="max-width: 100%; max-height: 300px; border-radius: 0.5rem; margin-top: 0.5rem;"></video>
+            </div>
+
+            <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+              <button class="btn btn-primary" onclick="testAPI()">
+                <span id="testBtn">🚀 发送测试</span>
+              </button>
+              <button class="btn btn-secondary" onclick="testHealth()">
+                ❤️ 健康检查
+              </button>
+            </div>
+            <div class="response-box" id="testResponse" style="display: none;"></div>
           </form>
         </div>
       </div>
@@ -544,6 +759,10 @@
 
   <script>
     const API_BASE = '';
+    
+    // Global storage for categorized models
+    let allModels = { text: [], speech: [], video: [], image: [], music: [] };
+    let currentModelType = 'text';
 
     async function fetchStatus() {
       try {
@@ -597,6 +816,9 @@
         image: [],
         music: []
       };
+      
+      // Store globally for model type switching
+      allModels = categories;
 
       const textPrefixes = ['MiniMax-M2', 'M2-her', 'gpt-'];
       const speechPrefixes = ['speech-'];
@@ -647,13 +869,89 @@
 
     function populateModelSelect(models) {
       const select = document.getElementById('testModel');
-      const textModels = models.filter(m => 
-        ['MiniMax-M2', 'M2-her'].some(p => m.id.includes(p))
-      );
-
-      select.innerHTML = textModels.map(m => 
-        `<option value="${m.id}">${m.id}</option>`
-      ).join('');
+      
+      // Build optgroups for all model types
+      const optgroups = [
+        { label: '📝 文本 (Text)', models: allModels.text, type: 'text' },
+        { label: '🎤 语音 (Speech)', models: allModels.speech, type: 'speech' },
+        { label: '🎬 视频 (Video)', models: allModels.video, type: 'video' },
+        { label: '🖼️ 图片 (Image)', models: allModels.image, type: 'image' },
+        { label: '🎵 音乐 (Music)', models: allModels.music, type: 'music' }
+      ];
+      
+      let html = '';
+      optgroups.forEach(group => {
+        if (group.models.length > 0) {
+          html += `<optgroup label="${group.label}">`;
+          html += group.models.map(m => `<option value="${m}">${m}</option>`).join('');
+          html += '</optgroup>';
+        }
+      });
+      
+      select.innerHTML = html;
+      
+      // Initialize with text models
+      updateModelDropdown('text');
+    }
+    
+    function updateModelDropdown(type) {
+      const select = document.getElementById('testModel');
+      const modelOptions = select.querySelectorAll('option');
+      const optgroups = select.querySelectorAll('optgroup');
+      
+      // Disable all options first
+      optgroups.forEach(group => {
+        group.querySelectorAll('option').forEach(opt => {
+          opt.style.display = 'none';
+        });
+      });
+      
+      // Enable options for the selected type
+      const typeLabels = {
+        'text': '📝 文本 (Text)',
+        'speech': '🎤 语音 (Speech)',
+        'video': '🎬 视频 (Video)',
+        'image': '🖼️ 图片 (Image)',
+        'music': '🎵 音乐 (Music)'
+      };
+      
+      optgroups.forEach(group => {
+        if (group.label === typeLabels[type]) {
+          group.querySelectorAll('option').forEach(opt => {
+            opt.style.display = '';
+          });
+        }
+      });
+    }
+    
+    function switchModelType(type) {
+      // Update tab buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.type === type) {
+          btn.classList.add('active');
+        }
+      });
+      
+      // Hide all input panels
+      document.querySelectorAll('.model-inputs').forEach(panel => {
+        panel.style.display = 'none';
+      });
+      
+      // Show selected input panel
+      const inputPanel = document.getElementById(type + 'Inputs');
+      if (inputPanel) {
+        inputPanel.style.display = 'block';
+      }
+      
+      // Hide all preview panels
+      document.getElementById('audioPreview').style.display = 'none';
+      document.getElementById('imagePreview').style.display = 'none';
+      document.getElementById('videoPreview').style.display = 'none';
+      
+      // Update dropdown
+      currentModelType = type;
+      updateModelDropdown(type);
     }
 
     function showError(msg) {
@@ -683,12 +981,15 @@
       }
     }
 
-    async function testChat() {
+    async function testAPI() {
       const responseBox = document.getElementById('testResponse');
       const btn = document.getElementById('testBtn');
-      const model = document.getElementById('testModel').value;
-      const prompt = document.getElementById('testPrompt').value;
       const apiKey = document.getElementById('testApiKey').value;
+
+      // Hide all previews first
+      document.getElementById('audioPreview').style.display = 'none';
+      document.getElementById('imagePreview').style.display = 'none';
+      document.getElementById('videoPreview').style.display = 'none';
 
       responseBox.style.display = 'block';
       responseBox.className = 'response-box';
@@ -696,35 +997,119 @@
       btn.innerHTML = '<span class="loading"></span> 发送中...';
       btn.disabled = true;
 
-      const headers = {
-        'Content-Type': 'application/json'
-      };
+      const headers = { 'Content-Type': 'application/json' };
       if (apiKey) {
         headers['x-api-key'] = apiKey;
-        saveApiKey(apiKey); // Save API key to localStorage
+        saveApiKey(apiKey);
       }
 
       try {
-        const res = await fetch(`${API_BASE}/v1/chat/completions`, {
-          method: 'POST',
+        let endpoint, body, method = 'POST';
+        
+        switch (currentModelType) {
+          case 'text':
+            endpoint = '/v1/chat/completions';
+            body = {
+              model: document.getElementById('testModel').value,
+              messages: [{ role: 'user', content: document.getElementById('textPrompt').value }],
+              max_tokens: parseInt(document.getElementById('textMaxTokens').value) || 256,
+              temperature: parseFloat(document.getElementById('textTemperature').value) || 0.7
+            };
+            break;
+            
+          case 'speech':
+            endpoint = '/v1/audio/speech';
+            body = {
+              model: document.getElementById('testModel').value,
+              input: document.getElementById('speechPrompt').value,
+              voice: document.getElementById('speechVoice').value,
+              response_format: document.getElementById('speechFormat').value,
+              speed: parseFloat(document.getElementById('speechSpeed').value) || 1.0
+            };
+            break;
+            
+          case 'video':
+            endpoint = '/v1/video_generation';
+            body = {
+              model: document.getElementById('testModel').value,
+              prompt: document.getElementById('videoPrompt').value,
+              resolution: document.getElementById('videoResolution').value,
+              duration: parseInt(document.getElementById('videoDuration').value) || 6
+            };
+            break;
+            
+          case 'image':
+            endpoint = '/v1/images/generations';
+            body = {
+              model: document.getElementById('imageModelType').value,
+              prompt: document.getElementById('imagePrompt').value,
+              size: document.getElementById('imageSize').value,
+              style: document.getElementById('imageStyle').value
+            };
+            break;
+            
+          case 'music':
+            endpoint = '/v1/music_generation';
+            body = {
+              model: document.getElementById('testModel').value,
+              prompt: document.getElementById('musicPrompt').value,
+              duration: parseInt(document.getElementById('musicDuration').value) || 30
+            };
+            break;
+        }
+
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+          method,
           headers,
-          body: JSON.stringify({
-            model: model,
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: 100,
-            temperature: 0.7
-          })
+          body: JSON.stringify(body)
         });
 
-        const data = await res.json();
+        // Handle different response types
+        const contentType = res.headers.get('content-type') || '';
         
-        if (!res.ok) {
-          responseBox.className = 'response-box error';
-          responseBox.textContent = `HTTP ${res.status}\n\n${JSON.stringify(data, null, 2)}`;
-        } else {
+        if (contentType.includes('audio') || contentType.includes('mpeg') || contentType.includes('mp3') || contentType.includes('wav') || contentType.includes('opus')) {
+          // Audio response (speech)
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          document.getElementById('audioPlayer').src = url;
+          document.getElementById('audioPreview').style.display = 'block';
           responseBox.className = 'response-box success';
-          const content = data.choices?.[0]?.message?.content || '无响应内容';
-          responseBox.textContent = `模型: ${data.model}\n\n回复:\n${content}`;
+          responseBox.textContent = `✅ ${currentModelType.toUpperCase()} 生成成功！\n音频已加载到上方预览区`;
+        } else if (contentType.includes('image') || contentType.includes('png') || contentType.includes('jpeg') || contentType.includes('webp')) {
+          // Image response
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          document.getElementById('imagePlayer').src = url;
+          document.getElementById('imagePreview').style.display = 'block';
+          responseBox.className = 'response-box success';
+          responseBox.textContent = `✅ ${currentModelType.toUpperCase()} 生成成功！\n图片已加载到上方预览区`;
+        } else if (contentType.includes('video') || contentType.includes('mp4')) {
+          // Video response
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          document.getElementById('videoPlayer').src = url;
+          document.getElementById('videoPreview').style.display = 'block';
+          responseBox.className = 'response-box success';
+          responseBox.textContent = `✅ ${currentModelType.toUpperCase()} 生成成功！\n视频已加载到上方预览区`;
+        } else {
+          // JSON response
+          const data = await res.json();
+          
+          if (!res.ok) {
+            responseBox.className = 'response-box error';
+            responseBox.textContent = `HTTP ${res.status}\n\n${JSON.stringify(data, null, 2)}`;
+          } else {
+            responseBox.className = 'response-box success';
+            
+            if (currentModelType === 'text') {
+              const content = data.choices?.[0]?.message?.content || '无响应内容';
+              responseBox.textContent = `模型: ${data.model}\n\n回复:\n${content}`;
+            } else if (currentModelType === 'video' || currentModelType === 'music' || currentModelType === 'image') {
+              responseBox.textContent = JSON.stringify(data, null, 2);
+            } else {
+              responseBox.textContent = JSON.stringify(data, null, 2);
+            }
+          }
         }
       } catch (err) {
         responseBox.className = 'response-box error';
