@@ -3,6 +3,8 @@
 // ============================================================
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import * as fs from 'fs';
+import * as path from 'path';
 import { getConfig } from '../config';
 import {
   MiniMaxChatRequest,
@@ -42,6 +44,18 @@ import {
   OpenAIMusicResponse,
 } from '../types';
 
+const DEBUG_FILE = path.join(__dirname, '../../debug.log');
+
+function debugLog(...args: any[]) {
+  try {
+    const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+    const timestamp = new Date().toISOString();
+    fs.appendFileSync(DEBUG_FILE, `[${timestamp}] ${msg}\n`);
+  } catch (e) {
+    // Ignore debug logging errors
+  }
+}
+
 export class MiniMaxService {
   constructor() {
     // Constructor remains empty, config is read per-request
@@ -58,7 +72,7 @@ export class MiniMaxService {
       timeout: config.timeout,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': apiKey,  // No "Bearer " prefix - MiniMax expects just the API key
+        'Authorization': `Bearer ${apiKey}`,
       },
     });
   }
@@ -72,6 +86,7 @@ export class MiniMaxService {
   ): Promise<OpenAIChatCompletionResponse> {
     const config = getConfig();
     const effectiveApiKey = apiKey || config.getApiKey();
+    debugLog(`chatCompletion - apiKey received: ${apiKey ? 'yes' : 'no'}, apiKey length: ${apiKey?.length || 0}, effectiveApiKey length: ${effectiveApiKey?.length || 0}, effectiveApiKey preview: ${effectiveApiKey ? effectiveApiKey.substring(0, 15) : 'EMPTY'}`);
     const minimaxReq = transformChatRequest(request);
     const endpoint = this.getChatEndpoint(request.model);
 
@@ -104,6 +119,11 @@ export class MiniMaxService {
   ): Promise<OpenAIImageResponse> {
     const config = getConfig();
     const effectiveApiKey = apiKey || config.getApiKey();
+    
+    // Debug log: show API key status (only first 4 chars for security)
+    const keyPreview = effectiveApiKey ? `${effectiveApiKey.substring(0, 4)}...` : 'EMPTY';
+    console.log(`[DEBUG] imageGeneration API key: ${keyPreview}, length: ${effectiveApiKey?.length || 0}`);
+    
     const minimaxReq = transformImageRequest(request);
 
     try {
