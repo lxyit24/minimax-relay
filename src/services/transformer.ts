@@ -77,8 +77,12 @@ export function transformChatResponse(
   const firstChoice = minimaxRes.choices?.[0];
   let assistantMessage: OpenAIMessage;
 
-  if (firstChoice?.messages && firstChoice.messages.length > 0) {
-    assistantMessage = firstChoice.messages[firstChoice.messages.length - 1];
+  // MiniMax returns message in 'message' (singular), not 'messages' (plural)
+  if (firstChoice?.message) {
+    assistantMessage = {
+      role: (firstChoice.message.role || 'assistant') as OpenAIMessage['role'],
+      content: firstChoice.message.content || '',
+    };
   } else {
     assistantMessage = { role: 'assistant', content: '' };
   }

@@ -240,13 +240,23 @@ export interface MiniMaxChatResponse {
   model: string;
   choices: Array<{
     index: number;
-    messages: OpenAIMessage[];
+    message: {
+      role: string;
+      content: string;
+      name?: string;
+      audio_content?: string;
+      reasoning_content?: string;
+    };
     finish_reason: string;
   }>;
   usage?: {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
+    total_characters?: number;
+    completion_tokens_details?: {
+      reasoning_tokens?: number;
+    };
   };
 }
 
