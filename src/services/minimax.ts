@@ -224,19 +224,9 @@ export class MiniMaxService {
   private getChatEndpoint(model: string): string {
     const modelLower = model.toLowerCase();
 
-    // All text generation models use /v1/chat_pro
-    if (
-      modelLower.includes('minimax-m2.7') ||
-      modelLower.includes('minimax-m2.5') ||
-      modelLower.includes('minimax-m2.1') ||
-      modelLower.includes('minimax-m2') ||
-      modelLower.includes('highspeed')
-    ) {
-      return '/v1/chat_pro';
-    }
-
-    // Default to chat_pro
-    return '/v1/chat_pro';
+    // All text generation models use /v1/text/chatcompletion_v2
+    // This is the correct MiniMax chat completion endpoint
+    return '/v1/text/chatcompletion_v2';
   }
 
   /**
