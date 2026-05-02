@@ -34,6 +34,72 @@ export interface OpenAIImageGenerationRequest {
   user?: string;
 }
 
+export interface OpenAISpeechRequest {
+  model?: string;
+  input: string;
+  voice?: string;
+  speed?: number;
+  pitch?: number;
+  volume?: number;
+  format?: 'mp3' | 'pcm' | 'flac' | 'wav';
+  response_format?: 'mp3' | 'wav' | 'opus' | 'aac';
+}
+
+export interface OpenAISpeechResponse {
+  id: string;
+  object: 'audio.speech';
+  created: number;
+  model: string;
+  data: string; // Base64 encoded audio data
+}
+
+export interface OpenAIVideoRequest {
+  model?: string;
+  prompt?: string;
+  input_files?: string[];
+  first_frame_image?: string;
+  last_frame_image?: string;
+  subject_reference?: string[];
+  duration?: number;
+  resolution?: '720P' | '768P' | '1080P';
+  subject_position?: number[];
+}
+
+export interface OpenAIVideoResponse {
+  id: string;
+  object: 'video.generation';
+  created: number;
+  model: string;
+  task_id?: string;
+  status?: string;
+  data?: {
+    video_url?: string;
+    cover_image_url?: string;
+  };
+}
+
+export interface OpenAIMusicRequest {
+  model: string;
+  prompt?: string;
+  lyrics?: string;
+  title?: string;
+  style?: string;
+  tags?: string;
+}
+
+export interface OpenAIMusicResponse {
+  id: string;
+  object: 'music.generation';
+  created: number;
+  model: string;
+  task_id?: string;
+  status?: string;
+  data?: {
+    music_url?: string;
+    lyric_url?: string;
+  };
+}
+
 export interface OpenAIDelta {
   role?: string;
   content?: string;
@@ -96,6 +162,78 @@ export interface MiniMaxImageRequest {
   style?: string;
 }
 
+export interface MiniMaxSpeechRequest {
+  model: string;
+  text: string;
+  stream?: boolean;
+  voice_setting?: {
+    voice_id?: string;
+    speed?: number;
+    pitch?: number;
+    volume?: number;
+  };
+  audio_setting?: {
+    format?: 'mp3' | 'pcm' | 'flac' | 'wav';
+    sample_rate?: number;
+    bitrate?: number;
+  };
+}
+
+export interface MiniMaxSpeechResponse {
+  id: string;
+  created: number;
+  model: string;
+  data?: {
+    audio_url?: string;
+    audio?: string; // base64 encoded
+  };
+}
+
+export interface MiniMaxVideoRequest {
+  model?: string;
+  prompt?: string;
+  input_files?: string[];
+  first_frame_image?: string;
+  last_frame_image?: string;
+  subject_reference?: string[];
+  duration?: number;
+  resolution?: '720P' | '768P' | '1080P';
+  subject_position?: number[];
+}
+
+export interface MiniMaxVideoResponse {
+  id: string;
+  created: number;
+  model: string;
+  task_id?: string;
+  status?: string;
+  data?: {
+    video_url?: string;
+    cover_image_url?: string;
+  };
+}
+
+export interface MiniMaxMusicRequest {
+  model: string;
+  prompt?: string;
+  lyrics?: string;
+  title?: string;
+  style?: string;
+  tags?: string;
+}
+
+export interface MiniMaxMusicResponse {
+  id: string;
+  created: number;
+  model: string;
+  task_id?: string;
+  status?: string;
+  data?: {
+    music_url?: string;
+    lyric_url?: string;
+  };
+}
+
 export interface MiniMaxChatResponse {
   id: string;
   created: number;
@@ -118,6 +256,14 @@ export interface MiniMaxImageResponse {
   base64_image?: string;
   image_url?: string;
   revised_prompt?: string;
+}
+
+// ---- Relay Config Types ----
+
+export interface RelayConfig {
+  bypass_model_check: boolean;
+  allowed_origins: string;
+  api_key_header: string;
 }
 
 // ---- Config Types ----
@@ -153,6 +299,7 @@ export interface AppConfig {
   server: ServerConfig;
   minimax: MiniMaxConfig;
   models: ModelsConfig;
+  relay: RelayConfig;
   logging: LoggingConfig;
   rate_limit: RateLimitConfig;
 }
@@ -180,7 +327,7 @@ export const ERROR_CODE_MAP: Record<number, { message: string; httpStatus: numbe
 
 // ---- Utility Types ----
 
-export type ModelType = 'chat' | 'image';
+export type ModelType = 'chat' | 'image' | 'speech' | 'video' | 'music';
 
 export interface ModelInfo {
   id: string;

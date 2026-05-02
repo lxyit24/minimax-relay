@@ -4,9 +4,23 @@
 
 import { Router, Request, Response } from 'express';
 import { getConfig } from '../config';
-import { ModelInfo } from '../types';
+import { ModelInfo, ModelType } from '../types';
 
 const router = Router();
+
+/**
+ * Get model type based on model ID
+ */
+function getModelType(modelId: string): ModelType {
+  const lower = modelId.toLowerCase();
+
+  if (lower.includes('image')) return 'image';
+  if (lower.includes('speech') || lower.includes('t2a')) return 'speech';
+  if (lower.includes('hailuo') || lower.includes('video')) return 'video';
+  if (lower.includes('music')) return 'music';
+
+  return 'chat';
+}
 
 /**
  * GET /v1/models
@@ -20,7 +34,7 @@ router.get('/models', (_req: Request, res: Response) => {
     id: modelId,
     object: 'model',
     owned_by: 'minimax',
-    type: modelId.includes('image') ? 'image' : 'chat',
+    type: getModelType(modelId),
   }));
 
   res.json({
@@ -52,7 +66,7 @@ router.get('/models/:model', (req: Request, res: Response) => {
     id: modelId,
     object: 'model',
     owned_by: 'minimax',
-    type: modelId.includes('image') ? 'image' : 'chat',
+    type: getModelType(modelId),
   };
 
   res.json(modelInfo);

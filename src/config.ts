@@ -27,6 +27,11 @@ const DEFAULT_CONFIG: AppConfig = {
     ],
     default: 'MiniMax-M2.7-highspeed',
   },
+  relay: {
+    bypass_model_check: false,
+    allowed_origins: '*',
+    api_key_header: 'x-api-key',
+  },
   logging: {
     level: 'info',
     format: 'simple',
@@ -48,7 +53,7 @@ class Config {
 
   private loadConfig(): AppConfig {
     // Start with defaults
-    let config = { ...DEFAULT_CONFIG };
+    let config = { ...DEFAULT_CONFIG } as AppConfig;
 
     // Override with config.yaml if it exists
     if (fs.existsSync(this.configPath)) {
@@ -61,8 +66,10 @@ class Config {
       }
     }
 
-    // Override with environment variables
-    config.minimax.api_key = process.env.MINIMAX_API_KEY || config.minimax.api_key;
+    // Override with environment variables (only if non-empty)
+    if (process.env.MINIMAX_API_KEY) {
+      config.minimax.api_key = process.env.MINIMAX_API_KEY;
+    }
     config.server.port = parseInt(process.env.PORT || String(config.server.port), 10);
     config.server.host = process.env.HOST || config.server.host;
     config.logging.level = (process.env.LOG_LEVEL as any) || config.logging.level;
@@ -91,6 +98,9 @@ class Config {
     if (overrides.models) {
       result.models = { ...defaults.models, ...overrides.models };
     }
+    if (overrides.relay) {
+      result.relay = { ...defaults.relay, ...overrides.relay };
+    }
     if (overrides.logging) {
       result.logging = { ...defaults.logging, ...overrides.logging };
     }
@@ -117,6 +127,10 @@ class Config {
     return this.config.models;
   }
 
+  getRelayConfig() {
+    return this.config.relay;
+  }
+
   getLoggingConfig() {
     return this.config.logging;
   }
@@ -125,12 +139,31 @@ class Config {
     return this.config.rate_limit;
   }
 
+  /**
+   * Check if a model is enabled
+   * When bypass_model_check is true, always returns true
+   */
   isModelEnabled(modelId: string): boolean {
+    if (this.config.relay?.bypass_model_check) {
+      return true;
+    }
     return this.config.models.enabled.includes(modelId);
   }
 
   getDefaultModel(): string {
     return this.config.models.default;
+  }
+
+  /**
+   * Get the API key to use for MiniMax
+   * Can be overridden via request header when using relay mode
+   */
+  getApiKey(headerApiKey?: string): string {
+    // Priority: header API key > config API key
+    if (headerApiKey) {
+      return headerApiKey;
+    }
+    return this.config.minimax.api_key;
   }
 }
 

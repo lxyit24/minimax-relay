@@ -10,11 +10,49 @@ minimax:
 
 models:
   enabled:
+    # Text Generation Models
+    - "MiniMax-M2.7"
     - "MiniMax-M2.7-highspeed"
+    - "MiniMax-M2.5"
     - "MiniMax-M2.5-highspeed"
-    - "gpt-5.5"
+    - "MiniMax-M2.1"
+    - "MiniMax-M2.1-highspeed"
+    - "MiniMax-M2"
+    - "M2-her"  # Role-play specialized model
+    # Speech Synthesis Models (T2A)
+    - "speech-2.8-hd"
+    - "speech-2.8-turbo"
+    - "speech-2.6-hd"
+    - "speech-2.6-turbo"
+    - "speech-02-hd"
+    - "speech-02-turbo"
+    - "speech-01-hd"
+    - "speech-01-turbo"
+    # Video Generation Models
+    - "MiniMax-Hailuo-2.3"
+    - "MiniMax-Hailuo-2.3-Fast"
+    - "MiniMax-Hailuo-02"
+    - "T2V-01-Director"
+    - "T2V-01"
+    # Image Generation Models
     - "image-01"
+    - "image-01-live"
+    # Music Generation Models
+    - "music-2.6"
+    - "music-2.6-free"
+    - "music-cover"
+    - "music-cover-free"
   default: "MiniMax-M2.7-highspeed"
+
+relay:
+  # Bypass model validation (for relay platforms like NewAPI)
+  # When enabled, any model request is forwarded to MiniMax
+  bypass_model_check: true
+  # CORS allowed origins (use "*" for all origins)
+  allowed_origins: "*"
+  # API key header name for master key setups
+  # Set to empty to disable header-based API key
+  api_key_header: "x-api-key"
 
 logging:
   level: "info"

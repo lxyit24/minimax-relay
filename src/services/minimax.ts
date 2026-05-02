@@ -9,6 +9,12 @@ import {
   MiniMaxChatResponse,
   MiniMaxImageRequest,
   MiniMaxImageResponse,
+  MiniMaxVideoRequest,
+  MiniMaxVideoResponse,
+  MiniMaxSpeechRequest,
+  MiniMaxSpeechResponse,
+  MiniMaxMusicRequest,
+  MiniMaxMusicResponse,
   ERROR_CODE_MAP,
   RelayError,
 } from '../types';
@@ -17,49 +23,64 @@ import {
   transformChatResponse,
   transformImageRequest,
   transformImageResponse,
+  transformSpeechRequest,
+  transformVideoRequest,
+  transformVideoResponse,
+  transformMusicRequest,
+  transformMusicResponse,
 } from './transformer';
 import {
   OpenAIChatCompletionRequest,
   OpenAIChatCompletionResponse,
   OpenAIImageGenerationRequest,
   OpenAIImageResponse,
+  OpenAISpeechRequest,
+  OpenAISpeechResponse,
+  OpenAIVideoRequest,
+  OpenAIVideoResponse,
+  OpenAIMusicRequest,
+  OpenAIMusicResponse,
 } from '../types';
 
 export class MiniMaxService {
-  private client: AxiosInstance;
-  private apiKey: string;
-
   constructor() {
-    const config = getConfig().getMiniMaxConfig();
-    this.apiKey = config.api_key;
+    // Constructor remains empty, config is read per-request
+  }
 
-    this.client = axios.create({
+  /**
+   * Get HTTP client with proper API key
+   */
+  private getClient(apiKey: string): AxiosInstance {
+    const config = getConfig().getMiniMaxConfig();
+    
+    return axios.create({
       baseURL: config.base_url,
       timeout: config.timeout,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
     });
   }
 
   /**
-   * Handle chat completion request
+   * Handle chat completion request (text generation models)
    */
   async chatCompletion(
-    request: OpenAIChatCompletionRequest
+    request: OpenAIChatCompletionRequest,
+    apiKey?: string
   ): Promise<OpenAIChatCompletionResponse> {
+    const config = getConfig();
+    const effectiveApiKey = apiKey || config.getApiKey();
     const minimaxReq = transformChatRequest(request);
-
-    // Determine which MiniMax endpoint to use based on model
     const endpoint = this.getChatEndpoint(request.model);
 
     try {
-      const response = await this.client.post<MiniMaxChatResponse>(
+      const client = this.getClient(effectiveApiKey);
+      const response = await client.post<MiniMaxChatResponse>(
         endpoint,
         minimaxReq
       );
-
       return transformChatResponse(response.data, request.model);
     } catch (error) {
       throw this.handleError(error);
@@ -70,16 +91,19 @@ export class MiniMaxService {
    * Handle image generation request
    */
   async imageGeneration(
-    request: OpenAIImageGenerationRequest
+    request: OpenAIImageGenerationRequest,
+    apiKey?: string
   ): Promise<OpenAIImageResponse> {
+    const config = getConfig();
+    const effectiveApiKey = apiKey || config.getApiKey();
     const minimaxReq = transformImageRequest(request);
 
     try {
-      const response = await this.client.post<MiniMaxImageResponse>(
+      const client = this.getClient(effectiveApiKey);
+      const response = await client.post<MiniMaxImageResponse>(
         '/v1/image_generation',
         minimaxReq
       );
-
       return transformImageResponse(response.data, request.prompt);
     } catch (error) {
       throw this.handleError(error);
@@ -87,23 +111,128 @@ export class MiniMaxService {
   }
 
   /**
+   * Handle speech synthesis request (T2A - Text to Audio)
+   * 
+   * NOTE: MiniMax T2A API returns JSON with hex-encoded audio:
+   * { data: { audio: "<hex_string>", status: 2 }, ... }
+   * We convert hex to base64 for OpenAI compatibility.
+   */
+  async speechGeneration(
+    request: OpenAISpeechRequest,
+    apiKey?: string
+  ): Promise<OpenAISpeechResponse> {
+    const config = getConfig();
+    const effectiveApiKey = apiKey || config.getApiKey();
+    const minimaxReq = transformSpeechRequest(request);
+
+    try {
+      const client = this.getClient(effectiveApiKey);
+      
+      // MiniMax returns JSON with hex-encoded audio, not ArrayBuffer
+      const response = await client.post<{
+        data?: { audio?: string; status?: number };
+        trace_id?: string;
+        base_resp?: { status_code?: number; status_msg?: string };
+      }>(
+        '/v1/t2a_v2',
+        minimaxReq,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      // Extract hex audio from response
+      const hexAudio = response.data?.data?.audio;
+      
+      if (!hexAudio) {
+        throw {
+          error: {
+            message: 'No audio data in response',
+            type: 'api_error',
+            code: 500,
+          },
+        };
+      }
+
+      // Convert hex to base64 for OpenAI compatibility
+      const buffer = Buffer.from(hexAudio, 'hex');
+      const base64Audio = buffer.toString('base64');
+
+      return {
+        id: `speech-${generateId()}`,
+        object: 'audio.speech',
+        created: Math.floor(Date.now() / 1000),
+        model: request.model || 'speech-02-turbo',
+        data: base64Audio,
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Handle video generation request
+   */
+  async videoGeneration(
+    request: OpenAIVideoRequest,
+    apiKey?: string
+  ): Promise<OpenAIVideoResponse> {
+    const config = getConfig();
+    const effectiveApiKey = apiKey || config.getApiKey();
+    const minimaxReq = transformVideoRequest(request);
+
+    try {
+      const client = this.getClient(effectiveApiKey);
+      const response = await client.post<MiniMaxVideoResponse>(
+        '/v1/video_generation',
+        minimaxReq
+      );
+      return transformVideoResponse(response.data);
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Handle music generation request
+   */
+  async musicGeneration(
+    request: OpenAIMusicRequest,
+    apiKey?: string
+  ): Promise<OpenAIMusicResponse> {
+    const config = getConfig();
+    const effectiveApiKey = apiKey || config.getApiKey();
+    const minimaxReq = transformMusicRequest(request);
+
+    try {
+      const client = this.getClient(effectiveApiKey);
+      const response = await client.post<MiniMaxMusicResponse>(
+        '/v1/music_generation',
+        minimaxReq
+      );
+      return transformMusicResponse(response.data);
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Determine the correct chat endpoint based on model
-   * MiniMax has different endpoints for different model types
    */
   private getChatEndpoint(model: string): string {
-    // Check for specific model types
     const modelLower = model.toLowerCase();
 
-    if (modelLower.includes('m2.7') || modelLower.includes('m2.5') || modelLower.includes('highspeed')) {
+    // All text generation models use /v1/chat_pro
+    if (
+      modelLower.includes('minimax-m2.7') ||
+      modelLower.includes('minimax-m2.5') ||
+      modelLower.includes('minimax-m2.1') ||
+      modelLower.includes('minimax-m2') ||
+      modelLower.includes('highspeed')
+    ) {
       return '/v1/chat_pro';
-    }
-
-    if (modelLower.includes('speech') || modelLower.includes('tts')) {
-      return '/v1/t2a_v2';
-    }
-
-    if (modelLower.includes('voice') || modelLower.includes('audio')) {
-      return '/v1/audio/transcriptions';
     }
 
     // Default to chat_pro
@@ -116,12 +245,11 @@ export class MiniMaxService {
   private handleError(error: unknown): RelayError {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError<{ error?: { message?: string; code?: number } }>;
-      
-      // MiniMax error response format
+
       if (axiosError.response?.data) {
         const errorData = axiosError.response.data;
         const code = errorData?.error?.code || axiosError.response.status;
-        
+
         const errorInfo = ERROR_CODE_MAP[code] || {
           message: errorData?.error?.message || axiosError.message,
           httpStatus: axiosError.response.status,
@@ -136,7 +264,6 @@ export class MiniMaxService {
         };
       }
 
-      // Network or other errors
       return {
         error: {
           message: axiosError.message || 'Network error',
@@ -146,7 +273,6 @@ export class MiniMaxService {
       };
     }
 
-    // Unknown error
     return {
       error: {
         message: 'Unknown error occurred',
@@ -186,4 +312,11 @@ export function getMiniMaxService(): MiniMaxService {
     serviceInstance = new MiniMaxService();
   }
   return serviceInstance;
+}
+
+/**
+ * Generate a random ID for fallback cases
+ */
+function generateId(): string {
+  return Math.random().toString(36).substring(2, 15);
 }
