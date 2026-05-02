@@ -195,6 +195,12 @@ export function transformImageRequest(
     minimaxReq.aspect_ratio = '1:1';
   }
 
+  // Only include style for models that support it (e.g., image-01-live)
+  // image-01 does not support style parameter
+  if (openaiReq.style && model !== 'image-01') {
+    (minimaxReq as any).style = openaiReq.style;
+  }
+
   return minimaxReq;
 }
 
