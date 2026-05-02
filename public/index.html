@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniMax Relay - Admin Dashboard</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --border: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo span {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-secondary);
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.error {
+      background: var(--error);
+    }
+
+    .status-dot.warning {
+      background: var(--warning);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .stat-sub {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-body {
+      padding: 1rem 1.25rem;
+    }
+
+    .model-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .model-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.375rem 0.75rem;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+      transition: all 0.2s;
+    }
+
+    .model-tag:hover {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .model-tag.text { border-left: 3px solid #3b82f6; }
+    .model-tag.speech { border-left: 3px solid #22c55e; }
+    .model-tag.video { border-left: 3px solid #f59e0b; }
+    .model-tag.image { border-left: 3px solid #ec4899; }
+    .model-tag.music { border-left: 3px solid #a855f7; }
+
+    .config-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .config-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .config-item:last-child {
+      border-bottom: none;
+    }
+
+    .config-key {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .config-value {
+      font-size: 0.875rem;
+      font-family: 'SF Mono', Monaco, monospace;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+    }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .api-tester {
+      margin-top: 1rem;
+    }
+
+    .api-tester input,
+    .api-tester textarea,
+    .api-tester select {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .api-tester textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .api-tester label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .response-box {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.75rem;
+      max-height: 300px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .response-box.error {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    .response-box.success {
+      border-color: var(--success);
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      border-top-color: var(--accent);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .time {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .no-models {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .error-banner {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--error);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      color: var(--error);
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <h1>🚀 MiniMax Relay</h1>
+        <span id="version">v1.0.0</span>
+      </div>
+      <div class="status-badge">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">检查中...</span>
+      </div>
+    </header>
+
+    <div id="errorBanner" class="error-banner" style="display: none;"></div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">服务状态</div>
+        <div class="stat-value" id="serverStatus">-</div>
+        <div class="stat-sub" id="serverUptime">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">文本模型</div>
+        <div class="stat-value" id="textModelCount">-</div>
+        <div class="stat-sub">Text Models</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">语音模型</div>
+        <div class="stat-value" id="speechModelCount">-</div>
+        <div class="stat-sub">Speech T2A</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">视频模型</div>
+        <div class="stat-value" id="videoModelCount">-</div>
+        <div class="stat-sub">Video Generation</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">图像模型</div>
+        <div class="stat-value" id="imageModelCount">-</div>
+        <div class="stat-sub">Image T2I</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">音乐模型</div>
+        <div class="stat-value" id="musicModelCount">-</div>
+        <div class="stat-sub">Music Gen</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            💬 文本模型
+          </div>
+          <span class="time" id="textModelsUpdated">-</span>
+        </div>
+        <div class="card-body">
+          <div class="model-grid" id="textModels"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            🎙️ 语音模型
+          </div>
+          <span class="time" id="speechModelsUpdated">-</span>
+        </div>
+        <div class="card-body">
+          <div class="model-grid" id="speechModels"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            🎬 视频模型
+          </div>
+          <span class="time" id="videoModelsUpdated">-</span>
+        </div>
+        <div class="card-body">
+          <div class="model-grid" id="videoModels"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            🖼️ 图像模型
+          </div>
+          <span class="time" id="imageModelsUpdated">-</span>
+        </div>
+        <div class="card-body">
+          <div class="model-grid" id="imageModels"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            🎵 音乐模型
+          </div>
+          <span class="time" id="musicModelsUpdated">-</span>
+        </div>
+        <div class="card-body">
+          <div class="model-grid" id="musicModels"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            ⚙️ 服务配置
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="config-list" id="configList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          🧪 API 测试
+        </div>
+        <button class="btn btn-secondary" onclick="refreshStatus()">
+          🔄 刷新状态
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="api-tester">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+              <label>模型</label>
+              <select id="testModel">
+                <optgroup label="Text">
+                  <option value="MiniMax-M2.7-highspeed">MiniMax-M2.7-highspeed</option>
+                </optgroup>
+              </select>
+            </div>
+            <div>
+              <label>API Key (可选)</label>
+              <input type="text" id="testApiKey" placeholder="x-api-key header 值">
+            </div>
+          </div>
+          <div style="margin-top: 1rem;">
+            <label>提示词 (Prompt)</label>
+            <textarea id="testPrompt" placeholder="输入你的问题...">你好，请用一句话介绍自己</textarea>
+          </div>
+          <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary" onclick="testChat()">
+              <span id="testBtn">🚀 发送测试</span>
+            </button>
+            <button class="btn btn-secondary" onclick="testHealth()">
+              ❤️ 健康检查
+            </button>
+          </div>
+          <div class="response-box" id="testResponse" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      MiniMax Relay Platform · OpenAI Compatible API Relay
+    </footer>
+  </div>
+
+  <script>
+    const API_BASE = '';
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        const data = await res.json();
+        updateStatus(true, data);
+        await fetchModels();
+      } catch (err) {
+        updateStatus(false, { error: err.message });
+      }
+    }
+
+    function updateStatus(ok, data) {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+      const serverStatus = document.getElementById('serverStatus');
+      const serverUptime = document.getElementById('serverUptime');
+
+      if (ok) {
+        dot.className = 'status-dot';
+        text.textContent = '运行中';
+        serverStatus.textContent = 'OK';
+        serverStatus.style.color = 'var(--success)';
+        serverUptime.textContent = new Date(data.timestamp).toLocaleString('zh-CN');
+      } else {
+        dot.className = 'status-dot error';
+        text.textContent = '离线';
+        serverStatus.textContent = 'ERROR';
+        serverStatus.style.color = 'var(--error)';
+        serverUptime.textContent = data.error || '';
+      }
+    }
+
+    async function fetchModels() {
+      try {
+        const res = await fetch(`${API_BASE}/v1/models`);
+        const data = await res.json();
+        categorizeModels(data.data || []);
+        populateModelSelect(data.data || []);
+        document.getElementById('errorBanner').style.display = 'none';
+      } catch (err) {
+        showError('获取模型列表失败: ' + err.message);
+      }
+    }
+
+    function categorizeModels(models) {
+      const categories = {
+        text: [],
+        speech: [],
+        video: [],
+        image: [],
+        music: []
+      };
+
+      const textPrefixes = ['MiniMax-M2', 'M2-her', 'gpt-'];
+      const speechPrefixes = ['speech-'];
+      const videoPrefixes = ['MiniMax-Hailuo', 'T2V-'];
+      const imagePrefixes = ['image-'];
+      const musicPrefixes = ['music-'];
+
+      models.forEach(m => {
+        const id = m.id || m;
+        if (textPrefixes.some(p => id.includes(p))) categories.text.push(id);
+        else if (speechPrefixes.some(p => id.includes(p))) categories.speech.push(id);
+        else if (videoPrefixes.some(p => id.includes(p))) categories.video.push(id);
+        else if (imagePrefixes.some(p => id.includes(p))) categories.image.push(id);
+        else if (musicPrefixes.some(p => id.includes(p))) categories.music.push(id);
+        else categories.text.push(id);
+      });
+
+      renderModels('textModels', categories.text, 'text');
+      renderModels('speechModels', categories.speech, 'speech');
+      renderModels('videoModels', categories.video, 'video');
+      renderModels('imageModels', categories.image, 'image');
+      renderModels('musicModels', categories.music, 'music');
+
+      document.getElementById('textModelCount').textContent = categories.text.length;
+      document.getElementById('speechModelCount').textContent = categories.speech.length;
+      document.getElementById('videoModelCount').textContent = categories.video.length;
+      document.getElementById('imageModelCount').textContent = categories.image.length;
+      document.getElementById('musicModelCount').textContent = categories.music.length;
+
+      const now = new Date().toLocaleTimeString('zh-CN');
+      ['text', 'speech', 'video', 'image', 'music'].forEach(cat => {
+        const el = document.getElementById(cat + 'ModelsUpdated');
+        if (el) el.textContent = now;
+      });
+    }
+
+    function renderModels(elementId, models, type) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+
+      if (models.length === 0) {
+        el.innerHTML = '<div class="no-models">暂无模型</div>';
+        return;
+      }
+
+      el.innerHTML = models.map(m => `<span class="model-tag ${type}">${m}</span>`).join('');
+    }
+
+    function populateModelSelect(models) {
+      const select = document.getElementById('testModel');
+      const textModels = models.filter(m => 
+        ['MiniMax-M2', 'M2-her'].some(p => m.id.includes(p))
+      );
+
+      select.innerHTML = textModels.map(m => 
+        `<option value="${m.id}">${m.id}</option>`
+      ).join('');
+    }
+
+    function showError(msg) {
+      const banner = document.getElementById('errorBanner');
+      banner.textContent = msg;
+      banner.style.display = 'block';
+    }
+
+    function refreshStatus() {
+      fetchStatus();
+    }
+
+    async function testHealth() {
+      const responseBox = document.getElementById('testResponse');
+      responseBox.style.display = 'block';
+      responseBox.className = 'response-box';
+      responseBox.textContent = '检查中...';
+
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        const data = await res.json();
+        responseBox.className = 'response-box success';
+        responseBox.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        responseBox.className = 'response-box error';
+        responseBox.textContent = '请求失败: ' + err.message;
+      }
+    }
+
+    async function testChat() {
+      const responseBox = document.getElementById('testResponse');
+      const btn = document.getElementById('testBtn');
+      const model = document.getElementById('testModel').value;
+      const prompt = document.getElementById('testPrompt').value;
+      const apiKey = document.getElementById('testApiKey').value;
+
+      responseBox.style.display = 'block';
+      responseBox.className = 'response-box';
+      responseBox.textContent = '发送中...';
+      btn.innerHTML = '<span class="loading"></span> 发送中...';
+      btn.disabled = true;
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (apiKey) {
+        headers['x-api-key'] = apiKey;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/v1/chat/completions`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 100,
+            temperature: 0.7
+          })
+        });
+
+        const data = await res.json();
+        
+        if (!res.ok) {
+          responseBox.className = 'response-box error';
+          responseBox.textContent = `HTTP ${res.status}\n\n${JSON.stringify(data, null, 2)}`;
+        } else {
+          responseBox.className = 'response-box success';
+          const content = data.choices?.[0]?.message?.content || '无响应内容';
+          responseBox.textContent = `模型: ${data.model}\n\n回复:\n${content}`;
+        }
+      } catch (err) {
+        responseBox.className = 'response-box error';
+        responseBox.textContent = '请求失败: ' + err.message;
+      } finally {
+        btn.innerHTML = '🚀 发送测试';
+        btn.disabled = false;
+      }
+    }
+
+    // Load config info
+    async function loadConfig() {
+      try {
+        const res = await fetch(`${API_BASE}/api/status`);
+        const data = await res.json();
+        renderConfig(data);
+      } catch (err) {
+        // If /api/status doesn't exist, use defaults
+        renderConfig({
+          server: { host: '0.0.0.0', port: 3000, base_path: '/v1' },
+          rate_limit: { requests_per_minute: 60 },
+          relay: { bypass_model_check: true }
+        });
+      }
+    }
+
+    function renderConfig(data) {
+      const list = document.getElementById('configList');
+      const items = [
+        { key: '服务器地址', value: `${data.server?.host || '-'}:${data.server?.port || '-'}` },
+        { key: 'API Base Path', value: data.server?.base_path || '/v1' },
+        { key: 'Rate Limit', value: `${data.rate_limit?.requests_per_minute || '-'} req/min` },
+        { key: 'Relay Mode', value: data.relay?.bypass_model_check ? '启用' : '禁用' },
+        { key: 'CORS', value: data.relay?.allowed_origins || '*' },
+        { key: 'API Key Header', value: data.relay?.api_key_header || 'x-api-key' }
+      ];
+
+      list.innerHTML = items.map(item => `
+        <div class="config-item">
+          <span class="config-key">${item.key}</span>
+          <span class="config-value">${item.value}</span>
+        </div>
+      `).join('');
+    }
+
+    // Initialize
+    fetchStatus();
+    loadConfig();
+
+    // Auto refresh every 30 seconds
+    setInterval(fetchStatus, 30000);
+  </script>
+</body>
+</html>

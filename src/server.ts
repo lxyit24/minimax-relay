@@ -4,6 +4,7 @@
 
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors, { CorsOptions } from 'cors';
+import * as path from 'path';
 import { getConfig } from './config';
 import { loggerMiddleware, errorLoggerMiddleware } from './middleware/logger';
 import { createRateLimiter } from './middleware/ratelimit';
@@ -39,6 +40,50 @@ export function createServer(): Application {
   // Health check endpoint
   app.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Admin dashboard API status endpoint
+  app.get('/api/status', (_req: Request, res: Response) => {
+    const config = getConfig();
+    const serverConfig = config.getServerConfig();
+    const rateLimitConfig = config.getRateLimitConfig();
+    const relayConfig = config.getRelayConfig();
+    const modelsConfig = config.getModelsConfig();
+
+    res.json({
+      server: {
+        host: serverConfig.host,
+        port: serverConfig.port,
+        base_path: serverConfig.base_path,
+      },
+      minimax: {
+        base_url: config.getMiniMaxConfig().base_url,
+        timeout: config.getMiniMaxConfig().timeout,
+      },
+      models: {
+        enabled: modelsConfig.enabled,
+        default: modelsConfig.default,
+        count: modelsConfig.enabled.length,
+      },
+      rate_limit: {
+        enabled: rateLimitConfig.enabled,
+        requests_per_minute: rateLimitConfig.requests_per_minute,
+      },
+      relay: {
+        bypass_model_check: relayConfig.bypass_model_check,
+        allowed_origins: relayConfig.allowed_origins,
+        api_key_header: relayConfig.api_key_header,
+      },
+      uptime: process.uptime(),
+    });
+  });
+
+  // Serve static files for admin dashboard
+  app.use(express.static(path.join(__dirname, '../public')));
+
+  // Serve admin dashboard for root path
+  app.get('/', (_req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
   });
 
   // Rate limiting
