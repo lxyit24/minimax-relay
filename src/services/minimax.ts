@@ -77,10 +77,18 @@ export class MiniMaxService {
 
     try {
       const client = this.getClient(effectiveApiKey);
-      const response = await client.post<MiniMaxChatResponse>(
+      const response = await client.post(
         endpoint,
         minimaxReq
       );
+
+      // Check for MiniMax API errors in base_resp
+      const baseResp = (response.data as any).base_resp;
+      if (baseResp && baseResp.status_code !== 0) {
+        const errorMsg = baseResp.status_msg || 'MiniMax API error';
+        throw new Error(`MiniMax chat failed: ${errorMsg} (code: ${baseResp.status_code})`);
+      }
+
       return transformChatResponse(response.data, request.model);
     } catch (error) {
       throw this.handleError(error);
@@ -135,7 +143,7 @@ export class MiniMaxService {
 
     try {
       const client = this.getClient(effectiveApiKey);
-      
+
       // MiniMax returns JSON with hex-encoded audio, not ArrayBuffer
       const response = await client.post<{
         data?: { audio?: string; status?: number };
@@ -151,17 +159,18 @@ export class MiniMaxService {
         }
       );
 
+      // Check for MiniMax API errors in base_resp
+      const baseResp = response.data?.base_resp;
+      if (baseResp && baseResp.status_code !== 0) {
+        const errorMsg = baseResp.status_msg || 'MiniMax API error';
+        throw new Error(`MiniMax speech failed: ${errorMsg} (code: ${baseResp.status_code})`);
+      }
+
       // Extract hex audio from response
       const hexAudio = response.data?.data?.audio;
-      
+
       if (!hexAudio) {
-        throw {
-          error: {
-            message: 'No audio data in response',
-            type: 'api_error',
-            code: 500,
-          },
-        };
+        throw new Error('No audio data in response');
       }
 
       // Convert hex to base64 for OpenAI compatibility
@@ -193,11 +202,22 @@ export class MiniMaxService {
 
     try {
       const client = this.getClient(effectiveApiKey);
-      const response = await client.post<MiniMaxVideoResponse>(
+      const response = await client.post<{
+        base_resp?: { status_code?: number; status_msg?: string };
+        [key: string]: unknown;
+      }>(
         '/v1/video_generation',
         minimaxReq
       );
-      return transformVideoResponse(response.data);
+
+      // Check for MiniMax API errors in base_resp
+      const baseResp = response.data?.base_resp;
+      if (baseResp && baseResp.status_code !== 0) {
+        const errorMsg = baseResp.status_msg || 'MiniMax API error';
+        throw new Error(`MiniMax video failed: ${errorMsg} (code: ${baseResp.status_code})`);
+      }
+
+      return transformVideoResponse(response.data as unknown as MiniMaxVideoResponse);
     } catch (error) {
       throw this.handleError(error);
     }
@@ -216,11 +236,22 @@ export class MiniMaxService {
 
     try {
       const client = this.getClient(effectiveApiKey);
-      const response = await client.post<MiniMaxMusicResponse>(
+      const response = await client.post<{
+        base_resp?: { status_code?: number; status_msg?: string };
+        [key: string]: unknown;
+      }>(
         '/v1/music_generation',
         minimaxReq
       );
-      return transformMusicResponse(response.data);
+
+      // Check for MiniMax API errors in base_resp
+      const baseResp = response.data?.base_resp;
+      if (baseResp && baseResp.status_code !== 0) {
+        const errorMsg = baseResp.status_msg || 'MiniMax API error';
+        throw new Error(`MiniMax music failed: ${errorMsg} (code: ${baseResp.status_code})`);
+      }
+
+      return transformMusicResponse(response.data as unknown as MiniMaxMusicResponse);
     } catch (error) {
       throw this.handleError(error);
     }
