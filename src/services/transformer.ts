@@ -175,7 +175,7 @@ export function transformImageRequest(
   const minimaxReq: MiniMaxImageRequest = {
     model: model,
     prompt: openaiReq.prompt,
-    response_format: openaiReq.response_format === 'url' ? 'url' : 'b64_json',
+    response_format: openaiReq.response_format === 'url' ? 'url' : 'base64',
     n: openaiReq.n || 1,
   };
 
@@ -208,12 +208,24 @@ export function transformImageRequest(
  * Transform MiniMax Image Response to OpenAI format
  */
 export function transformImageResponse(
-  minimaxRes: MiniMaxImageResponse,
+  minimaxRes: any,  // MiniMax returns { data: { image_base64: [...] } }
   prompt: string
 ): OpenAIImageResponse {
   const data = [];
 
-  if (minimaxRes.base64_image) {
+  // MiniMax returns { data: { image_base64: ["..."] } } for base64 responses
+  if (minimaxRes.data?.image_base64?.length) {
+    data.push({
+      b64_json: minimaxRes.data.image_base64[0],
+      revised_prompt: prompt,
+    });
+  } else if (minimaxRes.data?.image_url) {
+    data.push({
+      url: minimaxRes.data.image_url,
+      revised_prompt: prompt,
+    });
+  } else if (minimaxRes.base64_image) {
+    // Fallback for different response structure
     data.push({
       b64_json: minimaxRes.base64_image,
       revised_prompt: minimaxRes.revised_prompt || prompt,

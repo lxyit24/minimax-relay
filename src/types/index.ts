@@ -29,7 +29,7 @@ export interface OpenAIImageGenerationRequest {
   prompt: string;
   n?: number;
   size?: '256x256' | '512x512' | '1024x1024' | '1792x1024' | '1024x1792';
-  response_format?: 'url' | 'b64_json';
+  response_format?: 'url' | 'base64';
   style?: 'vivid' | 'natural';
   user?: string;
 }
@@ -153,7 +153,7 @@ export interface MiniMaxImageRequest {
   model: string;
   prompt: string;
   aspect_ratio?: '1:1' | '16:9' | '4:3' | '3:2' | '2:3' | '3:4' | '9:16' | '21:9';
-  response_format?: 'url' | 'b64_json';
+  response_format?: 'url' | 'base64';
   n?: number;
   width?: number;
   height?: number;

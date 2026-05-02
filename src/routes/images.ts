@@ -27,7 +27,7 @@ const imageGenerationSchema = z.object({
 		'1792x1024',
 		'1024x1792'
 	]).optional(),
-	response_format: z.enum(['url', 'b64_json']).optional(),
+	response_format: z.enum(['url', 'base64']).optional(),
 	style: z.enum(['vivid', 'natural']).optional(),
 	user: z.string().optional(),
 });
@@ -111,7 +111,7 @@ router.post('/image_generation', async (req: Request, res: Response) => {
 			prompt: req.body.prompt,
 			n: req.body.n,
 			size: req.body.size || '1024x1024',
-			response_format: req.body.response_format === 'url' ? 'url' : 'b64_json',
+			response_format: req.body.response_format === 'url' ? 'url' : 'base64',
 		};
 
 		const service = getMiniMaxService();
