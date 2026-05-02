@@ -505,20 +505,20 @@
       </div>
       <div class="card-body">
         <div class="api-tester">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div>
-              <label>模型</label>
-              <select id="testModel">
-                <optgroup label="Text">
-                  <option value="MiniMax-M2.7-highspeed">MiniMax-M2.7-highspeed</option>
-                </optgroup>
-              </select>
+          <form id="testForm" onsubmit="return false;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div>
+                <label>模型</label>
+                <select id="testModel">
+                  <optgroup label="Text">
+                  </optgroup>
+                </select>
+              </div>
+              <div>
+                <label>API Key</label>
+                <input type="password" id="testApiKey" name="api_key" placeholder="输入 API Key" autocomplete="current-password">
+              </div>
             </div>
-            <div>
-              <label>API Key (可选)</label>
-              <input type="text" id="testApiKey" placeholder="x-api-key header 值">
-            </div>
-          </div>
           <div style="margin-top: 1rem;">
             <label>提示词 (Prompt)</label>
             <textarea id="testPrompt" placeholder="输入你的问题...">你好，请用一句话介绍自己</textarea>
@@ -532,6 +532,7 @@
             </button>
           </div>
           <div class="response-box" id="testResponse" style="display: none;"></div>
+          </form>
         </div>
       </div>
     </div>
@@ -700,6 +701,7 @@
       };
       if (apiKey) {
         headers['x-api-key'] = apiKey;
+        saveApiKey(apiKey); // Save API key to localStorage
       }
 
       try {
@@ -768,9 +770,23 @@
       `).join('');
     }
 
+    function saveApiKey(key) {
+      if (key) {
+        localStorage.setItem('minimax_relay_api_key', key);
+      }
+    }
+
+    function loadApiKey() {
+      const savedKey = localStorage.getItem('minimax_relay_api_key');
+      if (savedKey) {
+        document.getElementById('testApiKey').value = savedKey;
+      }
+    }
+
     // Initialize
     fetchStatus();
     loadConfig();
+    loadApiKey();
 
     // Auto refresh every 30 seconds
     setInterval(fetchStatus, 30000);
