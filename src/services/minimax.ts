@@ -58,7 +58,7 @@ export class MiniMaxService {
       timeout: config.timeout,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': apiKey,  // No "Bearer " prefix - MiniMax expects just the API key
       },
     });
   }
@@ -100,10 +100,18 @@ export class MiniMaxService {
 
     try {
       const client = this.getClient(effectiveApiKey);
-      const response = await client.post<MiniMaxImageResponse>(
+      const response = await client.post(
         '/v1/image_generation',
         minimaxReq
       );
+
+      // Check for MiniMax API errors in base_resp
+      const baseResp = (response.data as any).base_resp;
+      if (baseResp && baseResp.status_code !== 0) {
+        const errorMsg = baseResp.status_msg || 'MiniMax API error';
+        throw new Error(`MiniMax image generation failed: ${errorMsg} (code: ${baseResp.status_code})`);
+      }
+
       return transformImageResponse(response.data, request.prompt);
     } catch (error) {
       throw this.handleError(error);
@@ -259,6 +267,17 @@ export class MiniMaxService {
           message: axiosError.message || 'Network error',
           type: 'api_error',
           code: axiosError.response?.status || 500,
+        },
+      };
+    }
+
+    // Handle regular Error objects (e.g., from throw new Error(...))
+    if (error instanceof Error) {
+      return {
+        error: {
+          message: error.message,
+          type: 'api_error',
+          code: 500,
         },
       };
     }
